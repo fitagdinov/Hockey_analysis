@@ -35,7 +35,7 @@ def getFrames(input_name:str):
             ok, frame = video.read()
     video.release()
 
-def create_summary_image_from_ds(dataset_folder:str, save_name:str):
+def create_summary_image_from_ds(dataset_folder:str, save_name:str, **kwargs):
     """Создаёт суммарную матрицу (в виде изображения), которая хранит
     все положения ноги"""
 
@@ -67,7 +67,7 @@ def create_summary_image_from_ds(dataset_folder:str, save_name:str):
 
     #передаём в модель изображение для предикта точек
     for file in os.listdir(dataset_folder)[:150]:
-        results = model(source=os.path.join(dataset_folder, file))
+        results = model(source=os.path.join(dataset_folder, file), **kwargs)
 
 
 
@@ -91,9 +91,9 @@ if __name__ == '__main__':
 
     person = "first_person"
     pose = "pose_fron_left"
-    phase = "otn"
+    phase = "ptn"
 
     create_summary_image_from_ds(dataset_folder=os.path.join(root, folder_input_imgs, person, pose, phase),
-                                 save_name="summary.jpg")
+                                 save_name="summary.jpg", person=person, pose=pose, phase=phase)
 
 
