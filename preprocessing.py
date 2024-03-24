@@ -5,7 +5,9 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
+from typing import List
 import matplotlib.pyplot as plt
+
 # Load a model
 root = os.getcwd()
 folder_model = os.path.join(root, "models", "yolov8s-pose.pt")
@@ -66,10 +68,66 @@ def create_summary_image_from_ds(dataset_folder:str, save_name:str, **kwargs):
     # cv2.imwrite(os.path.join("output_folder", "SI", "front", "summary.jpg"), first_img)
 
     #передаём в модель изображение для предикта точек
-    for file in os.listdir(dataset_folder)[:150]:
-        results = model(source=os.path.join(dataset_folder, file), **kwargs)
-        print("results = ", results)
+    keypoints = []
+    images = []
+    boxes = []
+    for file in os.listdir(dataset_folder)[:1]:
+        results = model(source=os.path.join(dataset_folder, file),  save = True)
+        keypoints.append(results[0].keypoints.xy)
+        boxes.append(results[0].boxes.xywh)
+        images.append(results[0].orig_img)
 
+
+    create_summary_data_from_points(images = images,
+                                    boxes = boxes,
+                                    points= keypoints,
+                                    output_folder=output_folder, summary_img=save_name)
+
+
+
+def create_summary_data_from_points(images:List, boxes:List,  points:List, output_folder,  summary_img):
+    """Принимает массив изображений и точек, сохраняет результирующее изображение для классификации"""
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 2
+    color = (0, 0, 255)
+    thickness = 2
+
+    for img_idx in range(len(images)):
+        w, h, _ = images[img_idx].shape
+        white_img = cv2.imread(os.path.join(output_folder,  summary_img))
+        add_image = np.zeros((w, h, 3), dtype=np.uint8)
+        box  = boxes[img_idx][0]
+        x1 = int(box[0])
+        y1 = int(box[1])
+        w = int(box[2])
+        h = int(box[3])
+        x1 -= w // 2
+        y1 -= h // 2
+        x2 = x1 + w
+        y2 = y1 + h
+        for idx_pt, xy in enumerate(points[img_idx][0]):
+            if idx_pt in range(11, 17): #Точки положения ног
+                if xy.tolist() != [0., 0.]: # and idx_pt == 16:  # правая(задняя) нога
+                    add_image[int(xy[1])][int(xy[0])] = 255
+
+                    # results[idx].orig_img = cv2.putText(results[idx].orig_img,
+                    #                                     str(idx_pt), (int(xy[0])-30, int(xy[1]-20)),font,
+                    #                                     fontScale, color, thickness, cv2.LINE_AA)
+                    # results[idx].orig_img = cv2.circle(results[idx].orig_img, (int(xy[0]), int(xy[1])),
+                    #                                    radius=10, thickness=-1, color=color)
+    # plt.imshow(results[idx].orig_img)
+    # plt.show()
+    # Заглушка от повторов:
+    # white_img = np.zeros((400, 200, 3))
+        cropped_img = add_image[y1:y2, x1:x2]
+        cropped_img = cv2.resize(cropped_img, (200, 400))
+        # cropped_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
+        total_img = np.maximum(white_img, cropped_img)
+        # plt.imshow(cropped_img)
+        # plt.show()
+
+        cv2.imwrite(os.path.join(output_folder, summary_img), total_img)
 
 
 
@@ -91,9 +149,9 @@ if __name__ == '__main__':
     ####################################Делаем предобработку##################################
 
 
-    person = "random_persons_for_presentation"
-    pose = "front"
-    phase = "ptn"
+    person = "first_person"
+    pose = "pose_side"
+    phase = "otn"
 
     create_summary_image_from_ds(dataset_folder=os.path.join(root, folder_input_imgs, person, pose, phase),
                                  save_name="summary.jpg", person=person, pose=pose, phase=phase)
