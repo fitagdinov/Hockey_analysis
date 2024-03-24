@@ -68,6 +68,8 @@ def create_summary_image_from_ds(dataset_folder:str, save_name:str, **kwargs):
     #передаём в модель изображение для предикта точек
     for file in os.listdir(dataset_folder)[:150]:
         results = model(source=os.path.join(dataset_folder, file), **kwargs)
+        print("results = ", results)
+
 
 
 
@@ -89,8 +91,8 @@ if __name__ == '__main__':
     ####################################Делаем предобработку##################################
 
 
-    person = "first_person"
-    pose = "pose_fron_left"
+    person = "random_persons_for_presentation"
+    pose = "front"
     phase = "ptn"
 
     create_summary_image_from_ds(dataset_folder=os.path.join(root, folder_input_imgs, person, pose, phase),
